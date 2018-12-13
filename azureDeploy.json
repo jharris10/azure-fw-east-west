@@ -2,12 +2,12 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-    	"vmSize": {
+        "vmSize": {
             "type": "string",
             "allowedValues": [
                 "Standard_DS3_v2",
                 "Standard_DS4_v2",
-		        "Standard_DS5_v2"
+                "Standard_DS5_v2"
             ],
             "metadata": {
                 "description": "Azure VM size for VM-Series"
@@ -17,116 +17,116 @@
         "imageVersion": {
             "type": "string",
             "allowedValues": [
-               "7.1.1",
-               "8.0.0",
-               "8.1.0",
-               "latest"
+                "7.1.1",
+                "8.0.0",
+                "8.1.0",
+                "latest"
             ],
             "metadata": {
-               "description": "PAN OS Version"
+                "description": "PAN OS Version"
             },
             "defaultValue": "latest"
-         },
-         "imageSku": {
+        },
+        "imageSku": {
             "type": "string",
             "allowedValues": [
-               "byol",
-               "bundle1",
-               "bundle2"
+                "byol",
+                "bundle1",
+                "bundle2"
             ],
             "metadata": {
-               "description": "Firewall License Model"
+                "description": "Firewall License Model"
             },
-            "defaultValue": "byol"
-         },
-         "vnetNewOrExisting": {
-			"type": "string",
-			"allowedValues": [
-				"new",
-				"existing"
-			],
-			"defaultValue": "new",
-			"metadata": {
-				"description": "Identify whether to use a new or existing vnet"
-			}
-		},
-         "virtualNetworkName": { 
-           "type": "string",
-           "metadata": {
-             "description": "Name of the Virtual Network (VNET)"
-           },
-           "defaultValue": "NET-Demo"
-         },
-         "virtualNetworkAddressPrefix": {
-           "type": "string",
-           "defaultValue": "10.0.0.0/16",
-           "metadata": {
-             "description": "Virtual network address CIDR"
-           }
-         },
-         "managementSubnetName": { 
+            "defaultValue": "bundle2"
+        },
+        "vnetNewOrExisting": {
+            "type": "string",
+            "allowedValues": [
+                "new",
+                "existing"
+            ],
+            "defaultValue": "new",
+            "metadata": {
+                "description": "Identify whether to use a new or existing vnet"
+            }
+        },
+        "virtualNetworkName": {
             "type": "string",
             "metadata": {
-              "description": "Name of the Management Subnet"
+                "description": "Name of the Virtual Network (VNET)"
+            },
+            "defaultValue": "NET-Demo"
+        },
+        "virtualNetworkAddressPrefix": {
+            "type": "string",
+            "defaultValue": "10.0.0.0/16",
+            "metadata": {
+                "description": "Virtual network address CIDR"
+            }
+        },
+        "managementSubnetName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the Management Subnet"
             },
             "defaultValue": "Management"
-          },
-          "managementSubnetAddressPrefix": {
+        },
+        "managementSubnetAddressPrefix": {
             "type": "string",
             "defaultValue": "10.0.0.0/24",
             "metadata": {
-              "description": "Management Subnet address CIDR"
+                "description": "Management Subnet address CIDR"
             }
-          },
-          "untrustSubnetName": { 
+        },
+        "untrustSubnetName": {
             "type": "string",
             "metadata": {
-              "description": "Name of the Untrust Subnet"
+                "description": "Name of the Untrust Subnet"
             },
             "defaultValue": "Untrust"
-          },
-          "untrustSubnetAddressPrefix": {
+        },
+        "untrustSubnetAddressPrefix": {
             "type": "string",
             "defaultValue": "10.0.1.0/24",
             "metadata": {
-              "description": "Untrust Subnet address CIDR"
+                "description": "Untrust Subnet address CIDR"
             }
-          },
-          "trustSubnetName": { 
+        },
+        "trustSubnetName": {
             "type": "string",
             "metadata": {
-              "description": "Name of the Trust Subnet"
+                "description": "Name of the Trust Subnet"
             },
             "defaultValue": "Trust"
-          },
-          "trustSubnetAddressPrefix": {
+        },
+        "trustSubnetAddressPrefix": {
             "type": "string",
             "defaultValue": "10.0.2.0/24",
             "metadata": {
-              "description": "Trust Subnet address CIDR"
+                "description": "Trust Subnet address CIDR"
             }
-          },
-          "protectedSubnetName": { 
+        },
+        "protectedSubnetName": {
             "type": "string",
             "metadata": {
-              "description": "Name of the protected backend Subnet (Web, Dev, DB)"
+                "description": "Name of the protected backend Subnet (Web, Dev, DB)"
             },
             "defaultValue": "Dev"
-          },
-          "protectedSubnetAddressPrefix": {
+        },
+        "protectedSubnetAddressPrefix": {
             "type": "string",
             "defaultValue": "10.0.3.0/24",
             "metadata": {
-              "description": "Protected Subnet address CIDR"
+                "description": "Protected Subnet address CIDR"
             }
-          },
-          "egressLBFrontEndAddress": {
+        },
+        "egressLBFrontEndAddress": {
             "type": "string",
             "defaultValue": "10.0.2.100",
             "metadata": {
-              "description": "IP Address of the inbound load balancer in the Trust network"
+                "description": "IP Address of the inbound load balancer in the Trust network"
             }
-          },
+        },
         "Username": {
             "defaultValue": "paloalto",
             "type": "String"
@@ -138,56 +138,114 @@
         "sourcePublicAddress": {
             "type": "string",
             "defaultValue": "0.0.0.0/0",
-             "metadata": {
-            "description": "Your source public IP address (or range) to restrict access to FW Management"
-             }
+            "metadata": {
+                "description": "Your source public IP address (or range) to restrict access to FW Management"
+            }
         },
-         "bootstrapFirewall": {
-             "type": "string",
-                "allowedValues": [
+        "bootstrapFirewall": {
+            "type": "string",
+            "allowedValues": [
                 "no",
                 "yes"
-        ],
-        "metadata": {
-           "description": "Do you want to bootstrap the firewall?"
+            ],
+            "metadata": {
+                "description": "Do you want to bootstrap the firewall?"
+            },
+            "defaultValue": "no"
         },
-        "defaultValue": "no"
-     },
-     "BootstrapStorageAccount": {
-             "defaultValue": "",
-             "type": "String",
-             "metadata": {
-                     "description": "Storage account hosting the bootstrap files"
-                 }
-         },
-         "StorageAccountAccessKey": {
-             "defaultValue": "",
-             "type": "String",
-             "metadata": {
-                     "description": "Authentication key to access the storage account"
-                 }
-         },
-         "StorageAccountFileShare": {
-             "defaultValue": "",
-             "type": "String",
-             "metadata": {
-                     "description": "The file share in the storage account where the bootstrap files are located"
-                 }
+        "BootstrapStorageAccount": {
+            "defaultValue": "",
+            "type": "String",
+            "metadata": {
+                "description": "Storage account hosting the bootstrap files"
+            }
         },
-            "StorageAccountFileShareDirectory": {
-                "defaultValue": "",
-                "type": "String",
-                "metadata": {
+        "StorageAccountAccessKey": {
+            "defaultValue": "",
+            "type": "String",
+            "metadata": {
+                "description": "Authentication key to access the storage account"
+            }
+        },
+        "StorageAccountFileShare": {
+            "defaultValue": "",
+            "type": "String",
+            "metadata": {
+                "description": "The file share in the storage account where the bootstrap files are located"
+            }
+        },
+        "StorageAccountFileShareDirectory": {
+            "defaultValue": "",
+            "type": "String",
+            "metadata": {
                 "description": "The subdirectory hosting the bootstrap files. Only required if hosting multiple bootstrap directories on the same share"
-                        }
-                    }
-                    },
+            }
+        },
+        "subscriptionId": {
+            "type": "string",
+            "metadata": {
+                "description": "Account subscription id - https://blogs.msdn.microsoft.com/mschray/2016/03/18/getting-your-azure-subscription-guid-new-portal/"
+            }
+        },
+        "appID": {
+            "type": "string",
+            "metadata": {
+                "description": "Registered App ID - https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-create-service-principal-portal"
+            }
+        },
+        "appSecret": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Client Secret for service principal - https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-create-service-principal-portal"
+            }
+        },
+        "TenantId": {
+            "type": "string",
+            "metadata": {
+                "description": "Tenant ID for service principal"
+            }
+        },
+        "panoramaIP": {
+            "type": "string",
+            "metadata": {
+                "description": "IP Address of the Panorama Management server. Should be reachable by both the hub and spoke"
+            }
+        },
+        "panoramaApiKey": {
+            "type": "securestring",
+            "metadata": {
+                "description": "API key to access Panorama Management server"
+            }
+        },
+    },
     "variables": {
         "uniqueId": "[uniqueString(resourceGroup().id)]",
         "customDataField": "[concat('storage-account=', parameters('BootstrapStorageAccount'), ',access-key=', parameters('StorageAccountAccessKey'), ',file-share=', parameters('StorageAccountFileShare'),',share-directory=', parameters('StorageAccountFileShareDirectory'))]",
-        "rtProtectedSubnetName": "[concat('RT-',parameters('protectedSubnetName'))]"
+        "rtProtectedSubnetName": "[concat('RT-',parameters('protectedSubnetName'))]",
+        "vmdev": "VM-DEV",
+        "space": " "
     },
     "resources": [
+        {
+            "name": "[concat(variables('vmdev'),'/vm-customscript')]",
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "apiVersion": "2017-03-30",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[concat('Microsoft.Compute/virtualMachines/', variables('vmdev'))]"
+            ],
+            "properties": {
+                "publisher": "Microsoft.Azure.Extensions",
+                "type": "CustomScript",
+                "typeHandlerVersion": "2.0",
+                "settings": {
+                    "fileUris": [
+                        "https://raw.githubusercontent.com/jjharris10/azure-fw-east-west/master/build-dev.sh"
+                    ],
+                    "commandToExecute": "[concat('/bin/bash ./start-hub.sh', variables('space'), parameters('subscriptionId'), variables('space'), parameters('appID'), variables('space'), parameters('appSecret'), variables('space'), parameters('TenantId'), variables('space'), parameters('panoramaIP'), variables('space'), parameters('panoramaApiKey'), variables('space'), variables('space'), '&')]"
+                }
+            }
+        },
         {
             "type": "Microsoft.Network/routeTables",
             "name": "[variables('rtProtectedSubnetName')]",
@@ -230,6 +288,7 @@
             "resources": [],
             "dependsOn": []
         },
+
         {
             "apiVersion": "2016-06-01",
             "condition": "[equals(parameters('vnetNewOrExisting'),'new')]",
@@ -247,7 +306,7 @@
                         "name": "[parameters('managementSubnetName')]",
                         "properties": {
                             "addressPrefix": "[parameters('managementSubnetAddressPrefix')]",
-				"networkSecurityGroup": {
+                            "networkSecurityGroup": {
                                 "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'Management')]"
                             }
                         }
@@ -256,16 +315,16 @@
                         "name": "[parameters('untrustSubnetName')]",
                         "properties": {
                             "addressPrefix": "[parameters('untrustSubnetAddressPrefix')]",
-				"networkSecurityGroup": {
+                            "networkSecurityGroup": {
                                 "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'Allow-All')]"
                             }
-                         }
+                        }
                     },
                     {
                         "name": "[parameters('trustSubnetName')]",
                         "properties": {
                             "addressPrefix": "[parameters('trustSubnetAddressPrefix')]",
-				"networkSecurityGroup": {
+                            "networkSecurityGroup": {
                                 "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'Allow-All')]"
                             }
                         }
@@ -277,7 +336,7 @@
                             "routeTable": {
                                 "id": "[resourceId('Microsoft.Network/routeTables', variables('rtProtectedSubnetName'))]"
                             },
-				"networkSecurityGroup": {
+                            "networkSecurityGroup": {
                                 "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'Management')]"
                             }
                         }
@@ -291,28 +350,27 @@
             ]
         },
         {
-        "apiVersion": "2016-06-01",
-        "condition": "[equals(parameters('vnetNewOrExisting'),'existing')]",
-        "type": "Microsoft.Network/virtualNetworks/subnets",
-        "name": "[concat(parameters('virtualNetworkName'), '/', parameters('protectedSubnetName'))]",
-        "location": "[resourceGroup().location]",
-        "properties": {
-          "addressPrefix": "[parameters('protectedSubnetAddressPrefix')]",
-          "routeTable": {
-            "id": "[resourceId('Microsoft.Network/routeTables', variables('rtProtectedSubnetName'))]"
-          },
-          "networkSecurityGroup": {
-            "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'Management')]"
-                 }
+            "apiVersion": "2016-06-01",
+            "condition": "[equals(parameters('vnetNewOrExisting'),'existing')]",
+            "type": "Microsoft.Network/virtualNetworks/subnets",
+            "name": "[concat(parameters('virtualNetworkName'), '/', parameters('protectedSubnetName'))]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "addressPrefix": "[parameters('protectedSubnetAddressPrefix')]",
+                "routeTable": {
+                    "id": "[resourceId('Microsoft.Network/routeTables', variables('rtProtectedSubnetName'))]"
+                },
+                "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'Management')]"
+                }
             }
-      },
+        },
         {
             "type": "Microsoft.Network/publicIPAddresses",
             "name": "IP-FW1-Management",
             "apiVersion": "2017-08-01",
             "location": "[resourceGroup().location]",
-		"sku":
-            {
+            "sku": {
                 "name": "Standard"
             },
             "properties": {
@@ -330,8 +388,7 @@
             "name": "IP-FW2-Management",
             "apiVersion": "2017-08-01",
             "location": "[resourceGroup().location]",
-		"sku":
-            {
+            "sku": {
                 "name": "Standard"
             },
             "properties": {
@@ -349,8 +406,7 @@
             "name": "IP-FW1-Untrust",
             "apiVersion": "2017-08-01",
             "location": "[resourceGroup().location]",
-		"sku":
-            {
+            "sku": {
                 "name": "Standard"
             },
             "properties": {
@@ -368,8 +424,7 @@
             "name": "IP-FW2-Untrust",
             "apiVersion": "2017-08-01",
             "location": "[resourceGroup().location]",
-		"sku":
-            {
+            "sku": {
                 "name": "Standard"
             },
             "properties": {
@@ -387,8 +442,7 @@
             "name": "IP-Dev-Management",
             "apiVersion": "2017-08-01",
             "location": "[resourceGroup().location]",
-		"sku":
-            {
+            "sku": {
                 "name": "Standard"
             },
             "properties": {
@@ -406,8 +460,7 @@
             "name": "LB-Egress",
             "apiVersion": "2017-08-01",
             "location": "[resourceGroup().location]",
-            "sku":
-            {
+            "sku": {
                 "name": "Standard"
             },
             "properties": {
@@ -415,7 +468,7 @@
                     {
                         "name": "LB-Egress-FrontEnd",
                         "properties": {
-                        	"privateIPAddress": "[parameters('egressLBFrontEndAddress')]",
+                            "privateIPAddress": "[parameters('egressLBFrontEndAddress')]",
                             "privateIPAllocationMethod": "Static",
                             "subnet": {
                                 "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName')), '/subnets/',parameters('trustSubnetName'))]"
@@ -518,9 +571,9 @@
                             "subnet": {
                                 "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName')), '/subnets/',parameters('managementSubnetName'))]"
                             },
-                     "dependsOn": [
-                            "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW1-Management')]"
-                          ]
+                            "dependsOn": [
+                                "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW1-Management')]"
+                            ]
                         }
                     }
                 ]
@@ -537,16 +590,17 @@
             "properties": {
                 "enableIPForwarding": true,
                 "ipConfigurations": [
-                	{
-						"name": "FW1-Untrust",
-						"properties": {
+                    {
+                        "name": "FW1-Untrust",
+                        "properties": {
                             "privateIPAllocationMethod": "Dynamic",
-							"publicIPAddress": {
+                            "publicIPAddress": {
                                 "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'IP-FW1-Untrust')]"
-                            },                            "primary": true,
+                            },
+                            "primary": true,
                             "subnet": {
                                 "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName')), '/subnets/',parameters('untrustSubnetName'))]"
-                            }                 
+                            }
                         }
                     }
                 ]
@@ -575,7 +629,7 @@
                             },
                             "dependsOn": [
                                 "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW1-Untrust')]"
-                              ]
+                            ]
                         }
                     }
                 ]
@@ -589,7 +643,6 @@
             "dependsOn": [
                 "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
                 "[resourceId('Microsoft.Network/loadBalancers', 'LB-Egress')]"
-
             ],
             "properties": {
                 "enableIPForwarding": true,
@@ -638,7 +691,7 @@
                         },
                         "dependsOn": [
                             "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW1-Trust')]"
-                          ]
+                        ]
                     }
                 ]
             }
@@ -670,12 +723,11 @@
                 ]
             }
         },
-        
-	{
+        {
             "type": "Microsoft.Network/networkSecurityGroups",
             "name": "Management",
             "apiVersion": "2017-06-01",
-		"location": "[resourceGroup().location]",
+            "location": "[resourceGroup().location]",
             "properties": {
                 "securityRules": [
                     {
@@ -823,13 +875,13 @@
                     }
                 ]
             },
-        "dependsOn": []
-    },
-            {
+            "dependsOn": []
+        },
+        {
             "type": "Microsoft.Network/networkSecurityGroups",
             "name": "Allow-All",
             "apiVersion": "2017-06-01",
-		"location": "[resourceGroup().location]",
+            "location": "[resourceGroup().location]",
             "properties": {
                 "securityRules": [
                     {
@@ -974,13 +1026,12 @@
                 "platformUpdateDomainCount": 2,
                 "platformFaultDomainCount": 2
             },
-		"sku": {
-			"name": "Aligned"
-		},
+            "sku": {
+                "name": "Aligned"
+            },
             "resources": [],
             "dependsOn": []
         },
-
         {
             "apiVersion": "2016-04-30-preview",
             "condition": "[equals(parameters('bootstrapFirewall'),'yes')]",
@@ -1013,9 +1064,11 @@
                         "version": "[parameters('imageVersion')]"
                     },
                     "osDisk": {
-                        "managedDisk": { "storageAccountType": "Premium_LRS" },
-			"caching": "ReadWrite",
-            		"createOption": "FromImage"
+                        "managedDisk": {
+                            "storageAccountType": "Premium_LRS"
+                        },
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage"
                     }
                 },
                 "networkProfile": {
@@ -1072,7 +1125,7 @@
                     "computerName": "VM-FW2",
                     "adminUsername": "[parameters('Username')]",
                     "adminPassword": "[parameters('Password')]",
-                     "customData": "[base64(variables('customDataField'))]"
+                    "customData": "[base64(variables('customDataField'))]"
                 },
                 "storageProfile": {
                     "imageReference": {
@@ -1082,9 +1135,11 @@
                         "version": "[parameters('imageVersion')]"
                     },
                     "osDisk": {
-                        "managedDisk": { "storageAccountType": "Premium_LRS" },
-			"caching": "ReadWrite",
-            		"createOption": "FromImage"
+                        "managedDisk": {
+                            "storageAccountType": "Premium_LRS"
+                        },
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage"
                     }
                 },
                 "networkProfile": {
@@ -1150,9 +1205,11 @@
                         "version": "[parameters('imageVersion')]"
                     },
                     "osDisk": {
-                        "managedDisk": { "storageAccountType": "Premium_LRS" },
-			"caching": "ReadWrite",
-            		"createOption": "FromImage"
+                        "managedDisk": {
+                            "storageAccountType": "Premium_LRS"
+                        },
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage"
                     }
                 },
                 "networkProfile": {
@@ -1218,9 +1275,11 @@
                         "version": "[parameters('imageVersion')]"
                     },
                     "osDisk": {
-                        "managedDisk": { "storageAccountType": "Premium_LRS" },
-			"caching": "ReadWrite",
-            		"createOption": "FromImage"
+                        "managedDisk": {
+                            "storageAccountType": "Premium_LRS"
+                        },
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage"
                     }
                 },
                 "networkProfile": {
@@ -1255,58 +1314,62 @@
                 "[resourceId('Microsoft.Compute/availabilitySets', 'AS-FW')]"
             ]
         },
-    {
-      "apiVersion": "2016-04-30-preview",
-      "type": "Microsoft.Compute/virtualMachines",
-      "name": "VM-Dev",
-      "location": "[resourceGroup().location]",
-      "dependsOn": [
-        "[resourceId('Microsoft.Network/networkInterfaces/', 'INT-Dev-Management')]"
-      ],
-      "properties": {
+        {
+            "apiVersion": "2016-04-30-preview",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "VM-Dev",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces/', 'INT-Dev-Management')]"
+            ],
+            "properties": {
                 "hardwareProfile": {
-          "vmSize": "Standard_DS1"
-        },
-        "osProfile": {
-          "computerName": "VM-Dev",
-          "adminUsername": "[parameters('Username')]",
-          "adminPassword": "[parameters('Password')]"
-        },
-        "storageProfile": {
-          "imageReference": {
-            "publisher": "Canonical",
-            "offer": "UbuntuServer",
-            "sku": "16.04.0-LTS",
-            "version": "latest"
-          },
-          "osDisk": {
-            "managedDisk": { "storageAccountType": "Premium_LRS" },
-		"caching": "ReadWrite",
-            "createOption": "FromImage"
-          },
-          "dataDisks": [
-            {
-              "diskSizeGB": "10",
-              "lun": 0,
-              "managedDisk": { "storageAccountType": "Premium_LRS" },
-              "createOption": "Empty"
+                    "vmSize": "Standard_DS1"
+                },
+                "osProfile": {
+                    "computerName": "VM-Dev",
+                    "adminUsername": "[parameters('Username')]",
+                    "adminPassword": "[parameters('Password')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "Canonical",
+                        "offer": "UbuntuServer",
+                        "sku": "16.04.0-LTS",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "managedDisk": {
+                            "storageAccountType": "Premium_LRS"
+                        },
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage"
+                    },
+                    "dataDisks": [
+                        {
+                            "diskSizeGB": "10",
+                            "lun": 0,
+                            "managedDisk": {
+                                "storageAccountType": "Premium_LRS"
+                            },
+                            "createOption": "Empty"
+                        }
+                    ]
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', 'INT-Dev-Management')]"
+                        }
+                    ]
+                },
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": "false"
+                    }
+                }
             }
-          ]
-        },
-        "networkProfile": {
-          "networkInterfaces": [
-            {
-              "id": "[resourceId('Microsoft.Network/networkInterfaces', 'INT-Dev-Management')]"
-            }
-          ]
-        },
-        "diagnosticsProfile": {
-          "bootDiagnostics": {
-            "enabled": "false"
-          }
         }
-      }
-    }
     ],
     "outputs": {
         "firewall 1 management": {
