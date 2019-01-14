@@ -521,6 +521,7 @@
             </servers>
           </dns-setting>
           <server-verification>yes</server-verification>
+          <panorama-server>138.91.121.77</panorama-server>
         </system>
         <setting>
           <config>

@@ -7,3 +7,7 @@ ipv6-default-gateway=
 hostname=pa-fw
 dns-primary=8.8.8.8
 dns-secondary=8.8.4.4
+vm-auth-key=852680482788951
+tplname=fw-east-west-stack
+dgname=east-us-2-perimeter
+panorama-server=138.91.121.77
