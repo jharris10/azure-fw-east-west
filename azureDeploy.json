@@ -218,7 +218,7 @@
         "uniqueId": "[uniqueString(resourceGroup().id)]",
         "customDataField": "[concat('storage-account=', parameters('BootstrapStorageAccount'), ',access-key=', parameters('StorageAccountAccessKey'), ',file-share=', parameters('StorageAccountFileShare'),',share-directory=', parameters('StorageAccountFileShareDirectory'))]",
         "rtProtectedSubnetName": "[concat('RT-',parameters('protectedSubnetName'))]",
-        "space": " ",
+        "space": " "
             },
     "resources": [
 
@@ -620,7 +620,7 @@
             "name": "INT-FW1-Untrust",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]"
                             ],
             "properties": {
                 "enableIPForwarding": true,
@@ -647,7 +647,7 @@
             "name": "INT-FW2-Untrust",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]"
                             ],
             "properties": {
                 "enableIPForwarding": true,
