@@ -120,13 +120,7 @@
                 "description": "VPN Subnet address CIDR"
             }
         },
-        "protectedSubnetName": {
-            "type": "string",
-            "metadata": {
-                "description": "Name of the protected backend Subnet (Web, Dev, DB)"
-            },
-            "defaultValue": "Dev"
-        },
+
         "protectedSubnetAddressPrefix": {
             "type": "string",
             "defaultValue": "10.0.3.0/24",
@@ -421,24 +415,7 @@
             "resources": [],
             "dependsOn": []
         },
-        {
-            "type": "Microsoft.Network/publicIPAddresses",
-            "name": "IP-Dev-Management",
-            "apiVersion": "2017-08-01",
-            "location": "[resourceGroup().location]",
-            "sku": {
-                "name": "Standard"
-            },
-            "properties": {
-                "publicIPAllocationMethod": "Static",
-                "idleTimeoutInMinutes": 4,
-                "dnsSettings": {
-                    "domainNameLabel": "[concat('devmanagement', variables('uniqueId'))]"
-                }
-            },
-            "resources": [],
-            "dependsOn": []
-        },
+
         {
             "type": "Microsoft.Network/publicIPAddresses",
             "name": "Ingress-LB-Pub",
@@ -790,33 +767,7 @@
                 ]
             }
         },
-        {
-            "apiVersion": "2015-06-15",
-            "type": "Microsoft.Network/networkInterfaces",
-            "name": "INT-Dev-Management",
-            "location": "[resourceGroup().location]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Network/publicIPAddresses', 'IP-Dev-Management')]",
-                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]"
-            ],
-            "properties": {
-                "enableIPForwarding": false,
-                "ipConfigurations": [
-                    {
-                        "name": "Dev",
-                        "properties": {
-                            "privateIPAllocationMethod": "Dynamic",
-                            "publicIPAddress": {
-                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'IP-Dev-Management')]"
-                            },
-                            "subnet": {
-                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName')), '/subnets/',parameters('protectedSubnetName'))]"
-                            }
-                        }
-                    }
-                ]
-            }
-        },
+
         {
             "type": "Microsoft.Network/networkSecurityGroups",
             "name": "Management",
@@ -1437,63 +1388,6 @@
                 "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW2-VPN')]",
                 "[resourceId('Microsoft.Compute/availabilitySets', 'AS-FW')]"
             ]
-        },
-        {
-            "apiVersion": "2016-04-30-preview",
-            "condition": "[equals(parameters('deploytestVM'),'yes')]",
-            "type": "Microsoft.Compute/virtualMachines",
-            "name": "VM-Dev",
-            "location": "[resourceGroup().location]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Network/networkInterfaces/', 'INT-Dev-Management')]"
-            ],
-            "properties": {
-                "hardwareProfile": {
-                    "vmSize": "[parameters('vmSize')]"
-                },
-                "osProfile": {
-                    "computerName": "VM-Dev",
-                    "adminUsername": "[parameters('Username')]",
-                    "adminPassword": "[parameters('Password')]"
-                },
-                "storageProfile": {
-                    "imageReference": {
-                        "publisher": "Canonical",
-                        "offer": "UbuntuServer",
-                        "sku": "16.04.0-LTS",
-                        "version": "latest"
-                    },
-                    "osDisk": {
-                        "managedDisk": {
-                            "storageAccountType": "Premium_LRS"
-                        },
-                        "caching": "ReadWrite",
-                        "createOption": "FromImage"
-                    },
-                    "dataDisks": [
-                        {
-                            "diskSizeGB": "10",
-                            "lun": 0,
-                            "managedDisk": {
-                                "storageAccountType": "Premium_LRS"
-                            },
-                            "createOption": "Empty"
-                        }
-                    ]
-                },
-                "networkProfile": {
-                    "networkInterfaces": [
-                        {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', 'INT-Dev-Management')]"
-                        }
-                    ]
-                },
-                "diagnosticsProfile": {
-                    "bootDiagnostics": {
-                        "enabled": "false"
-                    }
-                }
-            }
         }
     ],
     "outputs": {
