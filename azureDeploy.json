@@ -219,8 +219,7 @@
         "customDataField": "[concat('storage-account=', parameters('BootstrapStorageAccount'), ',access-key=', parameters('StorageAccountAccessKey'), ',file-share=', parameters('StorageAccountFileShare'),',share-directory=', parameters('StorageAccountFileShareDirectory'))]",
         "rtProtectedSubnetName": "[concat('RT-',parameters('protectedSubnetName'))]",
         "space": " ",
-        "lbId": "[resourceId('Microsoft.Network/loadBalancers/', 'LB-Ingress')]"
-    },
+            },
     "resources": [
 
         {
@@ -622,8 +621,7 @@
             "location": "[resourceGroup().location]",
             "dependsOn": [
                 "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
-                "[resourceId('Microsoft.Network/loadBalancers/', 'LB-Ingress')]"
-            ],
+                            ],
             "properties": {
                 "enableIPForwarding": true,
                 "ipConfigurations": [
@@ -650,8 +648,7 @@
             "location": "[resourceGroup().location]",
             "dependsOn": [
                 "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
-                "[resourceId('Microsoft.Network/loadBalancers', 'LB-Ingress')]"
-            ],
+                            ],
             "properties": {
                 "enableIPForwarding": true,
                 "ipConfigurations": [
