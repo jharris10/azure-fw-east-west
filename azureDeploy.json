@@ -12,7 +12,15 @@
             "metadata": {
                 "description": "Azure VM size for VM-Series"
             },
-            "defaultValue": "Standard_D3_v2"
+            "defaultValue": "Standard_DS3_v2"
+        },
+        "disktype":{
+            "type": "string",
+            "allowedValues": [
+              "Standard_LRS",
+              "Premium_LRS"
+            ],
+            "defaultValue": ""
         },
         "imageVersion": {
             "type": "string",
@@ -120,14 +128,6 @@
                 "description": "VPN Subnet address CIDR"
             }
         },
-
-        "protectedSubnetAddressPrefix": {
-            "type": "string",
-            "defaultValue": "10.0.3.0/24",
-            "metadata": {
-                "description": "Protected Subnet address CIDR"
-            }
-        },
         "egressLBFrontEndAddress": {
             "type": "string",
             "defaultValue": "10.0.2.100",
@@ -157,22 +157,24 @@
                 "description": "Your source public IP address (or range) to restrict access to FW Management"
             }
         },
-        "bootstrapFirewall": {
-            "type": "string",
-            "allowedValues": [
-                "no",
-                "yes"
-            ],
+        "enable-palo-alto-bootstrap": {
+            "type": "bool",
             "metadata": {
-                "description": "Do you want to bootstrap the firewall?"
-            },
-            "defaultValue": "no"
+                "description": "Specifies if bootstrap storage account will be used"
+            }
         },
         "BootstrapStorageAccount": {
             "defaultValue": "",
             "type": "String",
             "metadata": {
                 "description": "Storage account hosting the bootstrap files"
+            }
+        },
+        "virtualMachine-count": {
+            "type": "int",
+            "defaultValue": 2,
+            "metadata": {
+                "description": "Number of NVA VMs to be created."
             }
         },
         "StorageAccountAccessKey": {
@@ -195,69 +197,14 @@
             "metadata": {
                 "description": "The subdirectory hosting the bootstrap files. Only required if hosting multiple bootstrap directories on the same share"
             }
-        },
-        "deploytestVM" :{
-            "allowedValues": [
-                "no",
-                "yes"
-            ],
-            "defaultValue": "no",
-            "type": "String",
-            "metadata": {
-                "description": "Select yes to deploy a test VM on the internal network"
-            }
         }
     },
     "variables": {
-        "uniqueId": "[uniqueString(resourceGroup().id)]",
-        "customDataField": "[concat('storage-account=', parameters('BootstrapStorageAccount'), ',access-key=', parameters('StorageAccountAccessKey'), ',file-share=', parameters('StorageAccountFileShare'),',share-directory=', parameters('StorageAccountFileShareDirectory'))]",
-        "rtProtectedSubnetName": "[concat('RT-',parameters('protectedSubnetName'))]",
-        "space": " "
-            },
+        "custom-data-field": "[concat('storage-account=', parameters('BootstrapStorageAccount'), ',access-key=', parameters('StorageAccountAccessKey'), ',file-share=', parameters('StorageAccountFileShare'),',share-directory=', parameters('StorageAccountFileShareDirectory'))]",
+        "resource-prefix": "east-west-fw",
+        "virtualMachine-name-prefix": "[concat(variables('resource-prefix'), '-vm')]"
+    },
     "resources": [
-
-        {
-            "type": "Microsoft.Network/routeTables",
-            "name": "[variables('rtProtectedSubnetName')]",
-            "apiVersion": "2016-03-30",
-            "location": "[resourceGroup().location]",
-            "properties": {
-                "routes": [
-                    {
-                        "name": "[concat(parameters('protectedSubnetName'),'-Network')]",
-                        "properties": {
-                            "addressPrefix": "[parameters('virtualNetworkAddressPrefix')]",
-                            "nextHopType": "VirtualAppliance",
-                            "nextHopIpAddress": "[parameters('egressLBFrontEndAddress')]"
-                        }
-                    },
-                    {
-                        "name": "[concat(parameters('protectedSubnetName'),'-Local')]",
-                        "properties": {
-                            "addressPrefix": "[parameters('protectedSubnetAddressPrefix')]",
-                            "nextHopType": "VnetLocal"
-                        }
-                    },
-                    {
-                        "name": "[concat(parameters('protectedSubnetName'),'-Default')]",
-                        "properties": {
-                            "addressPrefix": "0.0.0.0/0",
-                            "nextHopType": "VirtualAppliance",
-                            "nextHopIpAddress": "[parameters('egressLBFrontEndAddress')]"
-                        }
-                    },
-                    {
-                        "name": "[concat(parameters('protectedSubnetName'),'-Trust')]",
-                        "properties": {
-                            "addressPrefix": "[parameters('trustSubnetAddressPrefix')]",
-                            "nextHopType": "VnetLocal"
-                        }
-                    }
-                ]
-            },
-            "resources": [],
-            "dependsOn": []
-        },
         {
             "apiVersion": "2016-06-01",
             "type": "Microsoft.Network/virtualNetworks",
@@ -306,133 +253,33 @@
                                 "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'Allow-All')]"
                             }
                         }
-                    },
-                    {
-                        "name": "[parameters('protectedSubnetName')]",
-                        "properties": {
-                            "addressPrefix": "[parameters('protectedSubnetAddressPrefix')]",
-                            "routeTable": {
-                                "id": "[resourceId('Microsoft.Network/routeTables', variables('rtProtectedSubnetName'))]"
-                            },
-                            "networkSecurityGroup": {
-                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'Management')]"
-                            }
-                        }
                     }
                 ]
             },
             "dependsOn": [
-                "[resourceId('Microsoft.Network/routeTables', variables('rtProtectedSubnetName'))]",
                 "[resourceId('Microsoft.Network/networkSecurityGroups', 'Allow-All')]",
                 "[resourceId('Microsoft.Network/networkSecurityGroups', 'Management')]"
             ]
         },
         {
-            "apiVersion": "2016-06-01",
-            "condition": "[equals(parameters('vnetNewOrExisting'),'existing')]",
-            "type": "Microsoft.Network/virtualNetworks/subnets",
-            "name": "[concat(parameters('virtualNetworkName'), '/', parameters('protectedSubnetName'))]",
+            "apiVersion": "2017-08-01",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "[concat(variables('virtualMachine-name-prefix'), copyindex(1), '-nic2-pip')]",
             "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "Standard"
+            },
+            "copy": {
+                "name": "nicPipLoop",
+                "count": "[parameters('virtualMachine-count')]"
+            },
+            "tags": {
+                "displayName": "[concat(variables('virtualMachine-name-prefix'), copyindex(1), '-nic2-pip')]"
+            },
             "properties": {
-                "addressPrefix": "[parameters('protectedSubnetAddressPrefix')]",
-                "routeTable": {
-                    "id": "[resourceId('Microsoft.Network/routeTables', variables('rtProtectedSubnetName'))]"
-                },
-                "networkSecurityGroup": {
-                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'Management')]"
-                }
+                "publicIPAllocationMethod": "Static",
+                "publicIPAddressVersion": "IPv4"
             }
-        },
-        {
-            "type": "Microsoft.Network/publicIPAddresses",
-            "name": "IP-FW1-Management",
-            "apiVersion": "2017-08-01",
-            "location": "[resourceGroup().location]",
-            "sku": {
-                "name": "Standard"
-            },
-            "properties": {
-                "publicIPAllocationMethod": "Static",
-                "idleTimeoutInMinutes": 4,
-                "dnsSettings": {
-                    "domainNameLabel": "[concat('fw1management', variables('uniqueId'))]"
-                }
-            },
-            "resources": [],
-            "dependsOn": []
-        },
-        {
-            "type": "Microsoft.Network/publicIPAddresses",
-            "name": "IP-FW2-Management",
-            "apiVersion": "2017-08-01",
-            "location": "[resourceGroup().location]",
-            "sku": {
-                "name": "Standard"
-            },
-            "properties": {
-                "publicIPAllocationMethod": "Static",
-                "idleTimeoutInMinutes": 4,
-                "dnsSettings": {
-                    "domainNameLabel": "[concat('fw2management', variables('uniqueId'))]"
-                }
-            },
-            "resources": [],
-            "dependsOn": []
-        },
-        {
-            "type": "Microsoft.Network/publicIPAddresses",
-            "name": "IP-FW1-Untrust",
-            "apiVersion": "2017-08-01",
-            "location": "[resourceGroup().location]",
-            "sku": {
-                "name": "Standard"
-            },
-            "properties": {
-                "publicIPAllocationMethod": "Static",
-                "idleTimeoutInMinutes": 4,
-                "dnsSettings": {
-                    "domainNameLabel": "[concat('fw1untrust', variables('uniqueId'))]"
-                }
-            },
-            "resources": [],
-            "dependsOn": []
-        },
-        {
-            "type": "Microsoft.Network/publicIPAddresses",
-            "name": "IP-FW2-Untrust",
-            "apiVersion": "2017-08-01",
-            "location": "[resourceGroup().location]",
-            "sku": {
-                "name": "Standard"
-            },
-            "properties": {
-                "publicIPAllocationMethod": "Static",
-                "idleTimeoutInMinutes": 4,
-                "dnsSettings": {
-                    "domainNameLabel": "[concat('fw2untrust', variables('uniqueId'))]"
-                }
-            },
-            "resources": [],
-            "dependsOn": []
-        },
-
-        {
-            "type": "Microsoft.Network/publicIPAddresses",
-            "name": "Ingress-LB-Pub",
-            "apiVersion": "2017-08-01",
-            "location": "[resourceGroup().location]",
-            "sku": {
-                "name": "Standard"
-            },
-            "properties": {
-                "publicIPAllocationMethod": "Static",
-                "idleTimeoutInMinutes": 4,
-                "dnsSettings": {
-                    "domainNameLabel": "[concat('publiclb', variables('uniqueId'))]"
-                }
-            },
-            "resources": [],
-            "dependsOn": []
         },
         {
             "type": "Microsoft.Network/loadBalancers",
@@ -537,23 +384,29 @@
             ]
         },
         {
-            "apiVersion": "2015-06-15",
             "type": "Microsoft.Network/networkInterfaces",
-            "name": "INT-FW1-Management",
+            "apiVersion": "2017-09-01",
             "location": "[resourceGroup().location]",
+            "name": "[concat(variables('virtualMachine-name-prefix'), copyindex(1), '-mgmt')]",
+            "tags": {
+                "displayName": "[concat(variables('virtualMachine-name-prefix'), copyindex(1), '-mgmt')]"
+            },
             "dependsOn": [
-                "[resourceId('Microsoft.Network/publicIPAddresses', 'IP-FW1-Management')]",
-                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]"
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
+                "LB-Egress"
             ],
+            "copy": {
+                "name": "nic1Loop",
+                "count": "[parameters('virtualMachine-count')]"
+            },
             "properties": {
+                "enableIPForwarding": true,
+                "enableAcceleratedNetworking": true,
                 "ipConfigurations": [
                     {
-                        "name": "FW1-Management",
+                        "name": "ipconfig1",
                         "properties": {
                             "privateIPAllocationMethod": "Dynamic",
-                            "publicIPAddress": {
-                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'IP-FW1-Management')]"
-                            },
                             "subnet": {
                                 "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName')), '/subnets/',parameters('managementSubnetName'))]"
                             }
@@ -563,53 +416,31 @@
             }
         },
         {
-            "apiVersion": "2015-06-15",
             "type": "Microsoft.Network/networkInterfaces",
-            "name": "INT-FW2-Management",
+            "apiVersion": "2017-09-01",
             "location": "[resourceGroup().location]",
+            "name": "[concat(variables('virtualMachine-name-prefix'), copyindex(1), '-untrust')]",
+            "tags": {
+                "displayName": "[concat(variables('virtualMachine-name-prefix'), copyindex(1), '-untrust')]"
+            },
             "dependsOn": [
-                "[resourceId('Microsoft.Network/publicIPAddresses', 'IP-FW2-Management')]",
-                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]"
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
+                "nicPipLoop"
             ],
-            "properties": {
-                "ipConfigurations": [
-                    {
-                        "name": "FW2-Management",
-                        "properties": {
-                            "privateIPAllocationMethod": "Dynamic",
-                            "publicIPAddress": {
-                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'IP-FW2-Management')]"
-                            },
-                            "subnet": {
-                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName')), '/subnets/',parameters('managementSubnetName'))]"
-                            },
-                            "dependsOn": [
-                                "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW1-Management')]"
-                            ]
-                        }
-                    }
-                ]
-            }
-        },
-        {
-            "apiVersion": "2015-06-15",
-            "type": "Microsoft.Network/networkInterfaces",
-            "name": "INT-FW1-Untrust",
-            "location": "[resourceGroup().location]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]"
-                            ],
+            "copy": {
+                "name": "nic1Loop",
+                "count": "[parameters('virtualMachine-count')]"
+            },
             "properties": {
                 "enableIPForwarding": true,
+                "enableAcceleratedNetworking": true,
                 "ipConfigurations": [
                     {
-                        "name": "FW1-Untrust",
+                        "name": "ipconfig1",
                         "properties": {
-                            "privateIPAllocationMethod": "Dynamic",
                             "publicIPAddress": {
-                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'IP-FW1-Untrust')]"
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(variables('virtualMachine-name-prefix'), copyindex(1), '-nic2-pip'))]"
                             },
-                            "primary": true,
                             "subnet": {
                                 "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName')), '/subnets/',parameters('untrustSubnetName'))]"
                             }
@@ -619,48 +450,27 @@
             }
         },
         {
-            "apiVersion": "2015-06-15",
             "type": "Microsoft.Network/networkInterfaces",
-            "name": "INT-FW2-Untrust",
+            "apiVersion": "2017-09-01",
             "location": "[resourceGroup().location]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]"
-                            ],
-            "properties": {
-                "enableIPForwarding": true,
-                "ipConfigurations": [
-                    {
-                        "name": "FW2-Untrust",
-                        "properties": {
-                            "privateIPAllocationMethod": "Dynamic",
-                            "publicIPAddress": {
-                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'IP-FW2-Untrust')]"
-                            },
-                            "subnet": {
-                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName')), '/subnets/',parameters('untrustSubnetName'))]"
-                            },
-                            "dependsOn": [
-                                "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW1-Untrust')]"
-                            ]
-                        }
-                    }
-                ]
-            }
-        },
-        {
-            "apiVersion": "2015-06-15",
-            "type": "Microsoft.Network/networkInterfaces",
-            "name": "INT-FW1-Trust",
-            "location": "[resourceGroup().location]",
+            "name": "[concat(variables('virtualMachine-name-prefix'), copyindex(1), '-trust')]",
+            "tags": {
+                "displayName": "[concat(variables('virtualMachine-name-prefix'), copyindex(1), '-trust')]"
+            },
+            "copy": {
+                "name": "nic1Loop",
+                "count": "[parameters('virtualMachine-count')]"
+            },
             "dependsOn": [
                 "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
                 "[resourceId('Microsoft.Network/loadBalancers', 'LB-Egress')]"
             ],
             "properties": {
                 "enableIPForwarding": true,
+                "enableAcceleratedNetworking": true,
                 "ipConfigurations": [
                     {
-                        "name": "FW1-Trust",
+                        "name": "ipconfig1",
                         "properties": {
                             "privateIPAllocationMethod": "Dynamic",
                             "subnet": {
@@ -676,53 +486,28 @@
                 ]
             }
         },
-
         {
-            "apiVersion": "2015-06-15",
             "type": "Microsoft.Network/networkInterfaces",
-            "name": "INT-FW2-Trust",
+            "apiVersion": "2017-09-01",
             "location": "[resourceGroup().location]",
+            "name": "[concat(variables('virtualMachine-name-prefix'), copyindex(1), '-vpn')]",
+            "tags": {
+                "displayName": "[concat(variables('virtualMachine-name-prefix'), copyindex(1), '-vpn')]"
+            },
+            "copy": {
+                "name": "nic1Loop",
+                "count": "[parameters('virtualMachine-count')]"
+            },
             "dependsOn": [
                 "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
                 "[resourceId('Microsoft.Network/loadBalancers', 'LB-Egress')]"
             ],
             "properties": {
                 "enableIPForwarding": true,
+                "enableAcceleratedNetworking": true,
                 "ipConfigurations": [
                     {
-                        "name": "FW2-Trust",
-                        "properties": {
-                            "privateIPAllocationMethod": "Dynamic",
-                            "subnet": {
-                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName')), '/subnets/',parameters('trustSubnetName'))]"
-                            },
-                            "loadBalancerBackendAddressPools": [
-                                {
-                                    "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'LB-Egress'), '/backendAddressPools/AS-FW')]"
-                                }
-                            ]
-                        },
-                        "dependsOn": [
-                            "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW1-Trust')]"
-                        ]
-                    }
-                ]
-            }
-        },
-        {
-            "apiVersion": "2015-06-15",
-            "type": "Microsoft.Network/networkInterfaces",
-            "name": "INT-FW1-VPN",
-            "location": "[resourceGroup().location]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
-                "[resourceId('Microsoft.Network/loadBalancers', 'LB-Egress')]"
-            ],
-            "properties": {
-                "enableIPForwarding": true,
-                "ipConfigurations": [
-                    {
-                        "name": "FW1-VPN",
+                        "name": "ipconfig1",
                         "properties": {
                             "privateIPAllocationMethod": "Dynamic",
                             "subnet": {
@@ -738,36 +523,6 @@
                 ]
             }
         },
-        {
-            "apiVersion": "2015-06-15",
-            "type": "Microsoft.Network/networkInterfaces",
-            "name": "INT-FW2-VPN",
-            "location": "[resourceGroup().location]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
-                "[resourceId('Microsoft.Network/loadBalancers', 'LB-Egress')]"
-            ],
-            "properties": {
-                "enableIPForwarding": true,
-                "ipConfigurations": [
-                    {
-                        "name": "FW2-VPN",
-                        "properties": {
-                            "privateIPAllocationMethod": "Dynamic",
-                            "subnet": {
-                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName')), '/subnets/',parameters('vpnSubnetName'))]"
-                            },
-                            "loadBalancerBackendAddressPools": [
-                                {
-                                    "id": "[concat(resourceId('Microsoft.Network/loadBalancers', 'LB-Egress'), '/backendAddressPools/VPN-AS-FW')]"
-                                }
-                            ]
-                        }
-                    }
-                ]
-            }
-        },
-
         {
             "type": "Microsoft.Network/networkSecurityGroups",
             "name": "Management",
@@ -1077,110 +832,45 @@
             "resources": [],
             "dependsOn": []
         },
-        
 
         {
-            "apiVersion": "2016-04-30-preview",
-            "condition": "[equals(parameters('bootstrapFirewall'),'yes')]",
             "type": "Microsoft.Compute/virtualMachines",
-            "name": "VM-FW1",
+            "apiVersion": "2017-03-30",
             "location": "[resourceGroup().location]",
             "plan": {
                 "name": "[parameters('imageSku')]",
                 "product": "vmseries1",
                 "publisher": "paloaltonetworks"
             },
+            "name": "[concat(variables('virtualMachine-name-prefix'), copyindex(1))]",
+            "tags": {
+                "displayName": "[concat(variables('virtualMachine-name-prefix'), copyindex(1))]"
+            },
+            "copy": {
+                "name": "vmLoop",
+                "count": "[parameters('virtualMachine-count')]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Compute/availabilitySets', 'AS-FW')]",
+                "[concat('Microsoft.Network/networkInterfaces/', concat(variables('virtualMachine-name-prefix'), copyindex(1), '-mgmt'))]",
+                "[concat('Microsoft.Network/networkInterfaces/', concat(variables('virtualMachine-name-prefix'), copyindex(1), '-untrust'))]",
+                "[concat('Microsoft.Network/networkInterfaces/', concat(variables('virtualMachine-name-prefix'), copyindex(1), '-trust'))]",
+                "[concat('Microsoft.Network/networkInterfaces/', concat(variables('virtualMachine-name-prefix'), copyindex(1), '-vpn'))]"
+                
+            ],
             "properties": {
                 "availabilitySet": {
                     "id": "[resourceId('Microsoft.Compute/availabilitySets', 'AS-FW')]"
-                },
-                "hardwareProfile": {
-                    "vmSize": "[parameters('vmSize')]"
                 },
                 "osProfile": {
                     "computerName": "VM-FW1",
                     "adminUsername": "[parameters('Username')]",
                     "adminPassword": "[parameters('Password')]",
-                    "customData": "[base64(variables('customDataField'))]"
-                },
-                "storageProfile": {
-                    "imageReference": {
-                        "publisher": "paloaltonetworks",
-                        "offer": "vmseries1",
-                        "sku": "[parameters('imageSku')]",
-                        "version": "[parameters('imageVersion')]"
-                    },
-                    "osDisk": {
-                        "managedDisk": {
-                            "storageAccountType": "Premium_LRS"
-                        },
-                        "caching": "ReadWrite",
-                        "createOption": "FromImage"
-                    }
-                },
-                "networkProfile": {
-                    "networkInterfaces": [
-                        {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW1-Management')]",
-                            "properties": {
-                                "primary": true
-                            }
-                        },
-                        {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW1-Untrust')]",
-                            "properties": {
-                                "primary": false
-                            }
-                        },
-                        {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW1-Trust')]",
-                            "properties": {
-                                "primary": false
-                            }
-                        },
-                        {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW1-VPN')]",
-                            "properties": {
-                                "primary": false
-                            }
-                        }
-                    ]
-                }
-            },
-            "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
-                "[resourceId('Microsoft.Network/publicIPAddresses', 'IP-FW1-Management')]",
-                "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW1-Management')]",
-                "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW1-Untrust')]",
-                "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW1-Trust')]",
-                "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW1-VPN')]",
-                "[resourceId('Microsoft.Compute/availabilitySets', 'AS-FW')]"
-            ]
-        },
-        {
-            "apiVersion": "2016-04-30-preview",
-            "condition": "[equals(parameters('bootstrapFirewall'),'yes')]",
-            "type": "Microsoft.Compute/virtualMachines",
-            "name": "VM-FW2",
-            "location": "[resourceGroup().location]",
-            "plan": {
-                "name": "[parameters('imageSku')]",
-                "product": "vmseries1",
-                "publisher": "paloaltonetworks"
-            },
-            "properties": {
-                "availabilitySet": {
-                    "id": "[resourceId('Microsoft.Compute/availabilitySets', 'AS-FW')]"
+                    "customData": "[if(equals(parameters('enable-palo-alto-bootstrap'), bool('false')), json('null'), base64(variables('custom-data-field')))]"
                 },
                 "hardwareProfile": {
                     "vmSize": "[parameters('vmSize')]"
                 },
-                "osProfile": {
-                    "computerName": "VM-FW2",
-                    "adminUsername": "[parameters('Username')]",
-                    "adminPassword": "[parameters('Password')]",
-                    "customData": "[base64(variables('customDataField'))]"
-                },
                 "storageProfile": {
                     "imageReference": {
                         "publisher": "paloaltonetworks",
@@ -1190,8 +880,8 @@
                     },
                     "osDisk": {
                         "managedDisk": {
-                            "storageAccountType": "Premium_LRS"
-                        },
+                            "storageAccountType": "[parameters('disktype')]"
+                          },
                         "caching": "ReadWrite",
                         "createOption": "FromImage"
                     }
@@ -1199,205 +889,35 @@
                 "networkProfile": {
                     "networkInterfaces": [
                         {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW2-Management')]",
-                            "properties": {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('virtualMachine-name-prefix'), copyindex(1), '-mgmt'))]",
+                            "properties":{
                                 "primary": true
                             }
                         },
                         {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW2-Untrust')]",
-                            "properties": {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('virtualMachine-name-prefix'), copyindex(1), '-untrust'))]",
+                            "properties":{
                                 "primary": false
                             }
                         },
                         {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW2-Trust')]",
-                            "properties": {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('virtualMachine-name-prefix'), copyindex(1), '-trust'))]",
+                            "properties":{
                                 "primary": false
                             }
                         },
                         {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW2-VPN')]",
-                            "properties": {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('virtualMachine-name-prefix'), copyindex(1), '-vpn'))]",
+                            "properties":{
                                 "primary": false
                             }
                         }
                     ]
                 }
             },
-            "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
-                "[resourceId('Microsoft.Network/publicIPAddresses', 'IP-FW2-Management')]",
-                "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW2-Management')]",
-                "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW2-Untrust')]",
-                "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW2-Trust')]",
-                "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW2-VPN')]",
-                "[resourceId('Microsoft.Compute/availabilitySets', 'AS-FW')]"
-            ]
-        },
-        {
-            "apiVersion": "2016-04-30-preview",
-            "condition": "[equals(parameters('bootstrapFirewall'),'no')]",
-            "type": "Microsoft.Compute/virtualMachines",
-            "name": "VM-FW01",
-            "location": "[resourceGroup().location]",
-            "plan": {
-                "name": "[parameters('imageSku')]",
-                "product": "vmseries1",
-                "publisher": "paloaltonetworks"
-            },
-            "properties": {
-                "availabilitySet": {
-                    "id": "[resourceId('Microsoft.Compute/availabilitySets', 'AS-FW')]"
-                },
-                "hardwareProfile": {
-                    "vmSize": "[parameters('vmSize')]"
-                },
-                "osProfile": {
-                    "computerName": "VM-FW1",
-                    "adminUsername": "[parameters('Username')]",
-                    "adminPassword": "[parameters('Password')]"
-                },
-                "storageProfile": {
-                    "imageReference": {
-                        "publisher": "paloaltonetworks",
-                        "offer": "vmseries1",
-                        "sku": "[parameters('imageSku')]",
-                        "version": "[parameters('imageVersion')]"
-                    },
-                    "osDisk": {
-                        "managedDisk": {
-                            "storageAccountType": "Premium_LRS"
-                        },
-                        "caching": "ReadWrite",
-                        "createOption": "FromImage"
-                    }
-                },
-                "networkProfile": {
-                    "networkInterfaces": [
-                        {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW1-Management')]",
-                            "properties": {
-                                "primary": true
-                            }
-                        },
-                        {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW1-Untrust')]",
-                            "properties": {
-                                "primary": false
-                            }
-                        },
-                        {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW1-Trust')]",
-                            "properties": {
-                                "primary": false
-                            }
-                        },
-                        {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW1-VPN')]",
-                            "properties": {
-                                "primary": false
-                            }
-                        }
-                    ]
-                }
-            },
-            "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
-                "[resourceId('Microsoft.Network/publicIPAddresses', 'IP-FW1-Management')]",
-                "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW1-Management')]",
-                "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW1-Untrust')]",
-                "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW1-Trust')]",
-                "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW1-VPN')]",
-                "[resourceId('Microsoft.Compute/availabilitySets', 'AS-FW')]"
-            ]
-        },
-        {
-            "apiVersion": "2016-04-30-preview",
-            "condition": "[equals(parameters('bootstrapFirewall'),'no')]",
-            "type": "Microsoft.Compute/virtualMachines",
-            "name": "VM-FW02",
-            "location": "[resourceGroup().location]",
-            "plan": {
-                "name": "[parameters('imageSku')]",
-                "product": "vmseries1",
-                "publisher": "paloaltonetworks"
-            },
-            "properties": {
-                "availabilitySet": {
-                    "id": "[resourceId('Microsoft.Compute/availabilitySets', 'AS-FW')]"
-                },
-                "hardwareProfile": {
-                    "vmSize": "[parameters('vmSize')]"
-                },
-                "osProfile": {
-                    "computerName": "VM-FW2",
-                    "adminUsername": "[parameters('Username')]",
-                    "adminPassword": "[parameters('Password')]"
-                },
-                "storageProfile": {
-                    "imageReference": {
-                        "publisher": "paloaltonetworks",
-                        "offer": "vmseries1",
-                        "sku": "[parameters('imageSku')]",
-                        "version": "[parameters('imageVersion')]"
-                    },
-                    "osDisk": {
-                        "managedDisk": {
-                            "storageAccountType": "Premium_LRS"
-                        },
-                        "caching": "ReadWrite",
-                        "createOption": "FromImage"
-                    }
-                },
-                "networkProfile": {
-                    "networkInterfaces": [
-                        {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW2-Management')]",
-                            "properties": {
-                                "primary": true
-                            }
-                        },
-                        {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW2-Untrust')]",
-                            "properties": {
-                                "primary": false
-                            }
-                        },
-                        {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW2-Trust')]",
-                            "properties": {
-                                "primary": false
-                            }
-                        },
-                        {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW2-VPN')]",
-                            "properties": {
-                                "primary": false
-                            }
-                        }
-                    ]
-                }
-            },
-            "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
-                "[resourceId('Microsoft.Network/publicIPAddresses', 'IP-FW2-Management')]",
-                "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW2-Management')]",
-                "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW2-Untrust')]",
-                "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW2-Trust')]",
-                "[resourceId('Microsoft.Network/networkInterfaces', 'INT-FW2-VPN')]",
-                "[resourceId('Microsoft.Compute/availabilitySets', 'AS-FW')]"
-            ]
+            "resources": []
         }
     ],
     "outputs": {
-        "firewall 1 management": {
-            "type": "String",
-            "value": "[reference('IP-FW1-Management').dnsSettings.fqdn]"
-        },
-        "firewall 2 management": {
-            "type": "String",
-            "value": "[reference('IP-FW2-Management').dnsSettings.fqdn]"
-        }
     }
 }
